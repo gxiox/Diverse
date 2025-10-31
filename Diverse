@@ -1,8 +1,6 @@
 -- LocalScript (StarterPlayerScripts)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 
 -- ================= GUI =================
@@ -118,6 +116,7 @@ end)
 spawn(function()
     while true do
         if getgenv().pressE then
+            local VirtualInputManager = game:GetService("VirtualInputManager")
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
             task.wait(0.05)
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
@@ -128,6 +127,7 @@ spawn(function()
 end)
 
 -- ================= Focus + กด Enter รับเควส =================
+local GuiService = game:GetService("GuiService")
 spawn(function()
     while true do
         local success, acceptButton = pcall(function()
@@ -135,6 +135,7 @@ spawn(function()
         end)
         if success and acceptButton then
             GuiService.SelectedObject = acceptButton
+            local VirtualInputManager = game:GetService("VirtualInputManager")
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
             task.wait()
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
@@ -151,7 +152,7 @@ local function isQuestGUIOpen()
     return success and acceptBtn ~= nil
 end
 
--- ================= กดสกิล Z-X-C-V ด้วย RemoteEvent (เฉพาะตอนบอสเกิด) =================
+-- ================= ยิงสกิลด้วย RemoteEvent (เฉพาะตอนบอสเกิด) =================
 local skillData = {
     Z = Vector3.new(1207.3773,30.2547,-1016.9204),
     X = Vector3.new(10856.6152,1344.3575,536.5257),
