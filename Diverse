@@ -1,0 +1,226 @@
+-- LocalScript (StarterPlayerScripts)
+local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local player = Players.LocalPlayer
+
+-- ================= GUI Drag =================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoBotGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 200, 0, 50)
+mainFrame.Position = UDim2.new(0, 50, 0, 50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 1, 0)
+toggleButton.Text = "Toggle AutoBot"
+toggleButton.BackgroundColor3 = Color3.fromRGB(60,60,60)
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Parent = mainFrame
+
+-- ================= ตัวแปรควบคุม =================
+getgenv().AutoBotEnabled = false
+getgenv().pressE = false
+getgenv().loopSkill = false
+getgenv().gun = false
+getgenv().autoEquipLight = false
+
+toggleButton.MouseButton1Click:Connect(function()
+    getgenv().AutoBotEnabled = not getgenv().AutoBotEnabled
+    getgenv().pressE = getgenv().AutoBotEnabled
+    getgenv().loopSkill = getgenv().AutoBotEnabled
+    getgenv().gun = getgenv().AutoBotEnabled
+    getgenv().autoEquipLight = getgenv().AutoBotEnabled
+end)
+
+-- ================= ฟังก์ชัน Equip Light =================
+local function EquipWithRemote(toolName)
+    local tool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
+    if tool and tool:IsA("Tool") then
+        local success, remote = pcall(function()
+            return ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Events"):WaitForChild("Input")
+        end)
+        if success and remote then
+            pcall(function()
+                remote:FireServer("Equip", tool)
+            end)
+        end
+        player.Character.Humanoid:EquipTool(tool)
+    end
+end
+
+-- ================= Loop Auto-Hold Light =================
+spawn(function()
+    while true do
+        if getgenv().autoEquipLight and player.Character then
+            EquipWithRemote("Light")
+        end
+        task.wait(1)
+    end
+end)
+
+-- ================= Auto Equip ตอน Respawn =================
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if getgenv().autoEquipLight then
+        EquipWithRemote("Light")
+    end
+end)
+
+-- ================= กด E อัตโนมัติ =================
+spawn(function()
+    while true do
+        if getgenv().pressE then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            task.wait(0.5)
+        end
+        task.wait()
+    end
+end)
+
+-- ================= Focus + กด Enter รับเควส =================
+spawn(function()
+    while true do
+        local success, acceptButton = pcall(function()
+            return player.PlayerGui.Display.Dialogue.Container.Main.ScrollingFrame:FindFirstChild("Choice_Accept")
+        end)
+
+        if success and acceptButton then
+            -- Focus ปุ่ม
+            GuiService.SelectedObject = acceptButton
+            -- กด Enter
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+            task.wait()
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+-- ================= ฟังก์ชันตรวจ GUI เควส =================
+local function isQuestGUIOpen()
+    local success, acceptBtn = pcall(function()
+        return player.PlayerGui.Display.Dialogue.Container.Main.ScrollingFrame:FindFirstChild("Choice_Accept")
+    end)
+    if success and acceptBtn then
+        return true
+    end
+    return false
+end
+
+-- ================= กดสกิล Z-X-C-V =================
+local skillZ = player.PlayerGui.Display.Mobile.Skills.Ability.Z.Use
+local skillX = player.PlayerGui.Display.Mobile.Skills.Ability.X.Use
+local skillC = player.PlayerGui.Display.Mobile.Skills.Ability.C.Use
+local skillV = player.PlayerGui.Display.Mobile.Skills.Ability.V.Use
+
+local function pressSkill(skillBtn)
+    GuiService.SelectedObject = skillBtn
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+    task.wait()
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+end
+
+spawn(function()
+    while true do
+        if getgenv().loopSkill and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not isQuestGUIOpen() then
+                local bossExists = false
+                for _,v in pairs(workspace.Enemies:GetChildren()) do
+                    if v.Name == "Shinigami [Level 1000]" and v:FindFirstChild("HumanoidRootPart") then
+                        bossExists = true
+                        break
+                    end
+                end
+                if bossExists then
+                    pressSkill(skillZ)
+                    task.wait()
+                    pressSkill(skillX)
+                    task.wait()
+                    pressSkill(skillC)
+                    task.wait()
+                    pressSkill(skillV)
+                    task.wait()
+                end
+            end
+        end
+        task.wait()
+    end
+end)
+
+-- ================= เคลื่อนที่ไปยังบอส =================
+spawn(function()
+    while true do
+        if getgenv().gun and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            for _,v in pairs(workspace.Enemies:GetChildren()) do
+                if v.Name == "Shinigami [Level 1000]" then
+                    local Mon = v:FindFirstChild("HumanoidRootPart")
+                    if Mon then
+                        hrp.CFrame = Mon.CFrame * CFrame.new(0,0,5)
+                    end
+                end
+            end
+        end
+        task.wait()
+    end
+end)
+
+-- ================= Armament Haki =================
+local function isHakiEnabled()
+    local char = workspace.Characters:FindFirstChild(player.Name)
+    if not char then return false end
+    return char:FindFirstChild("Armament Haki") ~= nil
+end
+
+local function activateArmament()
+    local args = { "Armament Haki" }
+    ReplicatedStorage:WaitForChild("Remotes")
+        :WaitForChild("Events")
+        :WaitForChild("Input")
+        :FireServer(unpack(args))
+end
+
+spawn(function()
+    while true do
+        if getgenv().AutoBotEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not isHakiEnabled() then
+                activateArmament()
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+-- ================= Quest Teleport =================
+local questCFrame = CFrame.new(
+    1207.90942, 19.3573723, -1060.38269,
+    0.707134247, -0, -0.707079291,
+    0, 1, -0,
+    0.707079291, 0, 0.707134247
+)
+
+spawn(function()
+    while true do
+        if getgenv().AutoBotEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local distance = (hrp.Position - questCFrame.Position).Magnitude
+            if distance > 5 then
+                hrp.CFrame = questCFrame
+            end
+        end
+        task.wait(1)
+    end
+end)
