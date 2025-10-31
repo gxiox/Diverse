@@ -5,26 +5,43 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 
--- ================= GUI Drag =================
+-- ================= GUI =================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoBotGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 50)
+mainFrame.Size = UDim2.new(0, 250, 0, 150)
 mainFrame.Position = UDim2.new(0, 50, 0, 50)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+mainFrame.BackgroundTransparency = 0.9
+mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(1, 0, 1, 0)
-toggleButton.Text = "Toggle AutoBot"
-toggleButton.BackgroundColor3 = Color3.fromRGB(60,60,60)
-toggleButton.TextColor3 = Color3.new(1,1,1)
-toggleButton.Parent = mainFrame
+local uICorner = Instance.new("UICorner")
+uICorner.CornerRadius = UDim.new(0, 20)
+uICorner.Parent = mainFrame
+
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.fromRGB(255,255,255)
+uiStroke.Thickness = 2
+uiStroke.Transparency = 0.5
+uiStroke.Parent = mainFrame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 10)
+title.BackgroundTransparency = 1
+title.Text = "Diverse piece"
+title.TextColor3 = Color3.fromRGB(0,0,0)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
 
 -- ================= ตัวแปรควบคุม =================
 getgenv().AutoBotEnabled = false
@@ -33,12 +50,34 @@ getgenv().loopSkill = false
 getgenv().gun = false
 getgenv().autoEquipLight = false
 
-toggleButton.MouseButton1Click:Connect(function()
+-- Farm Gem Button + Status
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, -20, 0, 40)
+button.Position = UDim2.new(0, 10, 0, 70)
+button.BackgroundColor3 = Color3.fromRGB(255,255,255)
+button.BackgroundTransparency = 0.7
+button.TextColor3 = Color3.fromRGB(0,0,0)
+button.Font = Enum.Font.Gotham
+button.TextSize = 16
+button.Text = "Farm Gem 🔴"
+
+local uICornerBtn = Instance.new("UICorner")
+uICornerBtn.CornerRadius = UDim.new(0,12)
+uICornerBtn.Parent = button
+button.Parent = mainFrame
+
+button.MouseButton1Click:Connect(function()
     getgenv().AutoBotEnabled = not getgenv().AutoBotEnabled
     getgenv().pressE = getgenv().AutoBotEnabled
     getgenv().loopSkill = getgenv().AutoBotEnabled
     getgenv().gun = getgenv().AutoBotEnabled
     getgenv().autoEquipLight = getgenv().AutoBotEnabled
+
+    if getgenv().AutoBotEnabled then
+        button.Text = "Farm Gem 🟢"
+    else
+        button.Text = "Farm Gem 🔴"
+    end
 end)
 
 -- ================= ฟังก์ชัน Equip Light =================
@@ -96,14 +135,11 @@ spawn(function()
         end)
 
         if success and acceptButton then
-            -- Focus ปุ่ม
             GuiService.SelectedObject = acceptButton
-            -- กด Enter
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
             task.wait()
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
         end
-
         task.wait(0.1)
     end
 end)
@@ -113,10 +149,7 @@ local function isQuestGUIOpen()
     local success, acceptBtn = pcall(function()
         return player.PlayerGui.Display.Dialogue.Container.Main.ScrollingFrame:FindFirstChild("Choice_Accept")
     end)
-    if success and acceptBtn then
-        return true
-    end
-    return false
+    return success and acceptBtn ~= nil
 end
 
 -- ================= กดสกิล Z-X-C-V =================
