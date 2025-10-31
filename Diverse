@@ -151,45 +151,69 @@ local function isQuestGUIOpen()
     return success and acceptBtn ~= nil
 end
 
--- ================= กดสกิล Weapon Z/X/C/V =================
-local skillButtons = {
-    Z = player.PlayerGui.Display.Mobile.Skills.Weapon.Z.Use,
-    X = player.PlayerGui.Display.Mobile.Skills.Weapon.X.Use,
-    C = player.PlayerGui.Display.Mobile.Skills.Weapon.C.Use,
-    V = player.PlayerGui.Display.Mobile.Skills.Weapon.V.Use
-}
+-- ================= ฟังก์ชันยิงสกิลผ่าน Remote =================
+local function useSkillRemote(skillKey, targetPosition)
+    local tool = player.Character:FindFirstChild("Saber")
+    if not tool then return end
 
-local function pressSkill(key)
-    local skillBtn = skillButtons[key]
-    if skillBtn then
-        GuiService.SelectedObject = skillBtn
-        task.wait()
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-        task.wait()
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+    local args = {
+        "Tool",
+        tool,
+        skillKey,
+        targetPosition
+    }
+    local success, remote = pcall(function()
+        return ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Events"):WaitForChild("Input")
+    end)
+    if success and remote then
+        pcall(function()
+            remote:FireServer(unpack(args))
+        end)
     end
 end
 
+-- ================= Loop Auto Skill (เช็คบอสเกิดก่อน) =================
 spawn(function()
     while true do
         if getgenv().loopSkill and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            if not isQuestGUIOpen() then
-                local bossExists = false
-                for _,v in pairs(workspace.Enemies:GetChildren()) do
-                    if v.Name == "Shinigami [Level 1000]" and v:FindFirstChild("HumanoidRootPart") then
-                        bossExists = true
-                        break
-                    end
-                end
-                if bossExists then
-                    for _, key in ipairs({"Z","X","C","V"}) do
-                        pressSkill(key)
-                        task.wait()
-                    end
+            local bossExists = false
+            for _,v in pairs(workspace.Enemies:GetChildren()) do
+                if v.Name == "Shinigami [Level 1000]" and v:FindFirstChild("HumanoidRootPart") then
+                    bossExists = true
+                    break
                 end
             end
+
+            if bossExists then
+                useSkillRemote("C", Vector3.new(1114.8075, 16.4287, -1152.3626))
+                task.wait(0.2)
+                useSkillRemote("X", Vector3.new(1114.6445, 16.4287, -1159.3775))
+                task.wait(0.2)
+                useSkillRemote("Z", Vector3.new(1111.6776, 16.7521, -1179.9415))
+            end
         end
-        task.wait()
+        task.wait(1)
+    end
+end)
+
+-- ================= ตรวจสอบ AutoFarm ทุก 5 วินาที + อัพเดทปุ่ม GUI =================
+spawn(function()
+    while true do
+        if not getgenv().AutoBotEnabled then
+            getgenv().AutoBotEnabled = true
+            getgenv().pressE = true
+            getgenv().loopSkill = true
+            getgenv().gun = true
+            getgenv().autoEquipSaber = true
+
+            -- อัพเดทปุ่ม GUI
+            if button and button:IsA("TextButton") then
+                button.Text = "Farm Gem 🟢"
+            end
+
+            print("AutoBot ถูกเปิดอัตโนมัติ")
+        end
+        task.wait(5)
     end
 end)
 
@@ -255,16 +279,5 @@ spawn(function()
             end
         end
         task.wait(1)
-    end
-end)
-
--- ================= Auto Click (VirtualUser) =================
-spawn(function()
-    while true do
-        if getgenv().AutoBotEnabled then
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new())
-        end
-        task.wait(0.5)
     end
 end)
