@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 
 -- ================= GUI =================
@@ -31,7 +32,6 @@ uiStroke.Thickness = 2
 uiStroke.Transparency = 0.5
 uiStroke.Parent = mainFrame
 
--- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 10)
@@ -48,7 +48,7 @@ getgenv().AutoBotEnabled = false
 getgenv().pressE = false
 getgenv().loopSkill = false
 getgenv().gun = false
-getgenv().autoEquipLight = false
+getgenv().autoEquipSaber = false
 
 -- Farm Gem Button + Status
 local button = Instance.new("TextButton")
@@ -71,7 +71,7 @@ button.MouseButton1Click:Connect(function()
     getgenv().pressE = getgenv().AutoBotEnabled
     getgenv().loopSkill = getgenv().AutoBotEnabled
     getgenv().gun = getgenv().AutoBotEnabled
-    getgenv().autoEquipLight = getgenv().AutoBotEnabled
+    getgenv().autoEquipSaber = getgenv().AutoBotEnabled
 
     if getgenv().AutoBotEnabled then
         button.Text = "Farm Gem 🟢"
@@ -80,7 +80,7 @@ button.MouseButton1Click:Connect(function()
     end
 end)
 
--- ================= ฟังก์ชัน Equip Light =================
+-- ================= ฟังก์ชัน Equip =================
 local function EquipWithRemote(toolName)
     local tool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
     if tool and tool:IsA("Tool") then
@@ -96,11 +96,11 @@ local function EquipWithRemote(toolName)
     end
 end
 
--- ================= Loop Auto-Hold Light =================
+-- ================= Loop Auto-Hold Saber =================
 spawn(function()
     while true do
-        if getgenv().autoEquipLight and player.Character then
-            EquipWithRemote("Light")
+        if getgenv().autoEquipSaber and player.Character then
+            EquipWithRemote("Saber")
         end
         task.wait(1)
     end
@@ -109,8 +109,8 @@ end)
 -- ================= Auto Equip ตอน Respawn =================
 player.CharacterAdded:Connect(function()
     task.wait(1)
-    if getgenv().autoEquipLight then
-        EquipWithRemote("Light")
+    if getgenv().autoEquipSaber then
+        EquipWithRemote("Saber")
     end
 end)
 
@@ -144,7 +144,6 @@ spawn(function()
     end
 end)
 
--- ================= ฟังก์ชันตรวจ GUI เควส =================
 local function isQuestGUIOpen()
     local success, acceptBtn = pcall(function()
         return player.PlayerGui.Display.Dialogue.Container.Main.ScrollingFrame:FindFirstChild("Choice_Accept")
@@ -152,18 +151,23 @@ local function isQuestGUIOpen()
     return success and acceptBtn ~= nil
 end
 
--- ================= กดสกิล Z-X-C-V =================
-local skillZ = player.PlayerGui.Display.Mobile.Skills.Ability.Z.Use
-local skillX = player.PlayerGui.Display.Mobile.Skills.Ability.X.Use
-local skillC = player.PlayerGui.Display.Mobile.Skills.Ability.C.Use
-local skillV = player.PlayerGui.Display.Mobile.Skills.Ability.V.Use
+-- ================= กดสกิล Weapon Z/X/C/V =================
+local skillButtons = {
+    Z = player.PlayerGui.Display.Mobile.Skills.Weapon.Z.Use,
+    X = player.PlayerGui.Display.Mobile.Skills.Weapon.X.Use,
+    C = player.PlayerGui.Display.Mobile.Skills.Weapon.C.Use,
+    V = player.PlayerGui.Display.Mobile.Skills.Weapon.V.Use
+}
 
-local function pressSkill(skillBtn)
-    GuiService.SelectedObject = skillBtn
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-    task.wait()
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+local function pressSkill(key)
+    local skillBtn = skillButtons[key]
+    if skillBtn then
+        GuiService.SelectedObject = skillBtn
+        task.wait()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+        task.wait()
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+    end
 end
 
 spawn(function()
@@ -178,14 +182,10 @@ spawn(function()
                     end
                 end
                 if bossExists then
-                    pressSkill(skillZ)
-                    task.wait()
-                    pressSkill(skillX)
-                    task.wait()
-                    pressSkill(skillC)
-                    task.wait()
-                    pressSkill(skillV)
-                    task.wait()
+                    for _, key in ipairs({"Z","X","C","V"}) do
+                        pressSkill(key)
+                        task.wait()
+                    end
                 end
             end
         end
@@ -255,5 +255,16 @@ spawn(function()
             end
         end
         task.wait(1)
+    end
+end)
+
+-- ================= Auto Click (VirtualUser) =================
+spawn(function()
+    while true do
+        if getgenv().AutoBotEnabled then
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new())
+        end
+        task.wait(0.5)
     end
 end)
