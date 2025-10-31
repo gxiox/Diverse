@@ -159,11 +159,13 @@ local skillC = player.PlayerGui.Display.Mobile.Skills.Ability.C.Use
 local skillV = player.PlayerGui.Display.Mobile.Skills.Ability.V.Use
 
 local function pressSkill(skillBtn)
-    GuiService.SelectedObject = skillBtn
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-    task.wait()
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+    if not isQuestGUIOpen() then -- ✅ ตรวจ GUI เควสก่อน
+        GuiService.SelectedObject = skillBtn
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+        task.wait()
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+    end
 end
 
 spawn(function()
